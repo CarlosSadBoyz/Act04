@@ -1,6 +1,7 @@
 ---
 # Fase PLAN/CODE: toda la configuración deseada vive aquí
-host: 10.10.20.181   # Cat9300 del sandbox reservable (via VPN)port: 443
+host: 10.10.20.181   # Cat9300 del sandbox reservable (via VPN)
+port: 443
 loopback:
   id: 201            # usa un número único si el sandbox es compartido
   description: MGMT-LOOPBACK-DEVOPS

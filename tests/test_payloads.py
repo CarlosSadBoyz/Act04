@@ -26,3 +26,26 @@ def test_loopback_ip_en_payload():
 def test_is_subset():
     assert is_subset({"a": 1}, {"a": 1, "b": 2})
     assert not is_subset({"a": 1}, {"a": 2})
+
+
+def test_rutas_usan_modelo_nativo():
+    for path, _ in build_items(CFG):
+        assert path.startswith("Cisco-IOS-XE-native:native/")
+
+
+def test_community_es_solo_lectura():
+    path, body = build_items(CFG)[1]
+    assert CFG["snmp"]["community"] in path
+    assert "RO" in body["Cisco-IOS-XE-snmp:community"]
+
+
+def test_location_y_contact_en_payload():
+    items = build_items(CFG)
+    assert items[2][1]["Cisco-IOS-XE-snmp:location"] == CFG["snmp"]["location"]
+    assert items[3][1]["Cisco-IOS-XE-snmp:contact"] == CFG["snmp"]["contact"]
+
+
+def test_is_subset_listas_y_anidados():
+    assert is_subset({"x": {"y": 1}}, {"x": {"y": 1, "z": 2}})
+    assert not is_subset({"x": {"y": 1}}, {"x": {}})
+    assert is_subset({"RO": [None]}, {"RO": [None]})
