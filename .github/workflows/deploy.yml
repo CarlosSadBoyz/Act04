@@ -1,6 +1,6 @@
 ---
 name: CI-CD RESTCONF
-on:
+"on":
   pull_request:
   push:
     branches: [main]
@@ -8,36 +8,43 @@ on:
 env:
   SANDBOX_USER: ${{ secrets.SANDBOX_USER }}
   SANDBOX_PASS: ${{ secrets.SANDBOX_PASS }}
+  PYTHONUTF8: "1"
+
+# El switch solo es alcanzable por la VPN del sandbox reservable,
+# por eso los jobs corren en el runner propio (self-hosted, Windows).
+defaults:
+  run:
+    shell: cmd
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - name: Build - lint
+      - name: Preparar entorno Python
         run: |
-          yamllint config .github
-          flake8 src tests --max-line-length 100
+          python -m venv .venv
+          .venv\Scripts\python -m pip install -q -r requirements.txt
+      - name: Build - yamllint
+        run: .venv\Scripts\yamllint config .github
+      - name: Build - flake8
+        run: .venv\Scripts\flake8 src tests --max-line-length 100
       - name: Test - unitarias
-        run: pytest -q
+        run: .venv\Scripts\pytest -v
       - name: Test - prueba en seco contra el switch
-        run: python src/deploy.py --check
+        run: .venv\Scripts\python src\deploy.py --check
 
   deploy:
     needs: build-test
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
+      - name: Preparar entorno Python
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python -m pip install -q -r requirements.txt
       - name: Deploy
-        run: python src/deploy.py
+        run: .venv\Scripts\python src\deploy.py
       - name: Monitor
-        run: python src/verify.py
+        run: .venv\Scripts\python src\verify.py
